@@ -6,6 +6,6 @@ https://docs.google.com/document/d/1ovW86g0dI_YrLGl-auqlVIgnyoKBJST9rC_H6ZDglaA/
 
 Comments:
 
-Graph baad me banaunga - jan confirm kar lu ki sahi hai implementation
+Graph baad me banaunga - jab confirm kar lu ki sahi hai implementation
 Policy ka code bacha hai abhi - karta hu mai morning me usko
-Meri ex ka call aa gaya tha iss liye thora time waste ho gaya :/
+

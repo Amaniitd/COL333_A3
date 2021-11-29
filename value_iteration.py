@@ -1,8 +1,10 @@
+import matplotlib.pyplot as plt
+
+
 # temporary variables
-EPSILON = 0.05
-GAMMA = 0.9
+
 passenger_loaction = (0, 0)
-destination_loaction = (1, 1)
+destination_loaction = (4, 4)
 
 # All possible states - 1250
 # a state -> taxi_loaction, passenger is picked up or not, passenger location
@@ -17,6 +19,9 @@ for i in range(5):
 # All possible actions: 4 directons, P - pickup, D - drop
 actions = ['N', 'S', 'E', 'W', 'P', 'D']
 Directions = ['N', 'S', 'E', 'W']
+
+Colors = {'R': (0, 4), 'G': (4, 4), 'B': (3, 0), 'Y': (0, 0)}
+ColorsList = [(0, 4), (4, 4), (3, 0), (0, 0)]
 
 # Function for checking if there is a wall or not
 
@@ -86,67 +91,84 @@ def Transition(s, a, s_):
         return tmp_dict[(x2, y2)]
     return 0
 
-##Tester for Transition Function
+# Tester for Transition Function
 # s = ((1, 4), False, (0, 0))
 # s_ = ((1, 4), False, (0, 0))
 # a = 'E'
 # print(Transition(s, a, s_))
 
 
-# Initial Values
-V = {}
-for s in States:
-    V[s] = 0
-
-
-iterations = 0
-while True:
-    iterations += 1
-    max_diff = 0
+def ValueIteration(GAMMA, EPSILON=0.05):
+    # Initial Values
+    V = {}
     for s in States:
-        V_old = V[s]
-        V_new = 0
-        for a in actions:
-            #Hardcoded for pickup actions
-            if a == 'P':
-                V_tmp = GAMMA*V_old
-                if (s[0] == s[2] and s[1] == False):
-                    V_tmp -= 1
+        V[s] = 0
+    max_diffList = []
+    iterations = 0
+    while True:
+        iterations += 1
+        max_diff = 0
+        for s in States:
+            V_old = V[s]
+            V_new = 0
+            for a in actions:
+                # Hardcoded for pickup actions
+                if a == 'P':
+                    V_tmp = GAMMA*V_old
+                    if (s[0] == s[2]):
+                        V_tmp -= 1
+                    else:
+                        V_tmp -= 10
+                    V_new = max(V_new, V_tmp)
+
+                elif a == 'D':
+                    # Hardcoded for putdown actions
+                    V_tmp = GAMMA*V_old
+                    if (s[0] == destination_loaction):
+                        if s[1]:
+                            V_tmp += 20
+                        else:
+                            V_tmp -= 1
+                    else:
+                        V_tmp -= 10
+                    V_new = max(V_new, V_tmp)
                 else:
-                    V_tmp -= 10
-                V_new = max(V_new, V_tmp)
+                    V_tmp = 0
+                    xt = s[0][0]
+                    yt = s[0][1]
+                    # s_dash contains possible states having transition value non-zero
+                    s_dash = [((xt, yt), s[1], s[2])]
+                    if xt > 0:
+                        s_dash.append(((xt - 1, yt), s[1], s[2]))
+                    if yt > 0:
+                        s_dash.append(((xt, yt - 1), s[1], s[2]))
+                    if yt < 4:
+                        s_dash.append(((xt, yt + 1), s[1], s[2]))
+                    if xt < 4:
+                        s_dash.append(((xt + 1, yt), s[1], s[2]))
 
-            elif a == 'D':
-                #Hardcoded for putdown actions
-                V_tmp = GAMMA*V_old
-                if (s[0] == s[2] and s[1]):
-                    V_tmp += 20
-                else:
-                    V_tmp -= 10
-                V_new = max(V_new, V_tmp)
-            else:
-                V_tmp = 0
-                xt = s[0][0]
-                yt = s[0][1]
-                #s_dash contains possible states having transition value non-zero
-                s_dash = [((xt, yt), s[1], s[2])]
-                if xt > 0:
-                    s_dash.append(((xt - 1, yt), s[1], s[2]))
-                if yt > 0:
-                    s_dash.append(((xt, yt - 1), s[1], s[2]))
-                if yt < 4:
-                    s_dash.append(((xt, yt + 1), s[1], s[2]))
-                if xt < 4:
-                    s_dash.append(((xt + 1, yt), s[1], s[2]))
+                    for s_ in s_dash:
+                        V_tmp += (GAMMA*V[s_] - 1)*Transition(s, a, s_)
 
-                for s_ in s_dash:
-                    V_tmp += (GAMMA*V[s_] - 1)*Transition(s, a, s_)
+                    V_new = max(V_new, V_tmp)
+            V[s] = V_new
+            max_diff = max(max_diff, abs(V_old - V[s]))
+        max_diffList.append(max_diff)
+        if max_diff < EPSILON:
+            break
+    iterationsList = [i for i in range(1, len(max_diffList) + 1)]
+    plt.plot(iterationsList, max_diffList)
+    plt.xlabel('Iterations')
+    plt.ylabel('Max Norm Distance')
+    title = 'Discount Factor ' + str(GAMMA)
+    plt.title(title)
+    filename = 'Plots/_' + str(GAMMA) + '.png'
+    plt.savefig(filename)
+    plt.clf()
+    return (V, iterations)
 
-                V_new = max(V_new, V_tmp)
-        V[s] = V_new
-        max_diff = max(max_diff, abs(V_old - V[s]))
 
-    if max_diff < EPSILON:
-        break
+GAMMAS = [0.01, 0.1, 0.5, 0.8, 0.99]
 
-print(iterations)
+for g in GAMMAS:
+    ValueIteration(g)
